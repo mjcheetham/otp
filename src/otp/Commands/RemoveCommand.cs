@@ -72,10 +72,6 @@ public class RemoveCommand : Command
             ? $"'{otp.Name}' ({issuer})"
             : $"'{otp.Name}'";
 
-        return Ui.Error.Prompt(
-            new ConfirmationPrompt($"Remove one-time password {Markup.Escape(label)}?")
-            {
-                DefaultValue = false
-            });
+        return Ui.Error.Confirm($"Remove one-time password {Markup.Escape(label)}?", defaultValue: false);
     }
 }
