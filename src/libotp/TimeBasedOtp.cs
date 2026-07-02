@@ -5,8 +5,9 @@ public class TimeBasedOtp(
     byte[] secret,
     int period = 30,
     int digits = 6,
-    OtpAlgorithm algorithm = OtpAlgorithm.Sha1)
-    : OneTimePassword(OtpKind.TimeBased, name, secret, digits, algorithm)
+    OtpAlgorithm algorithm = OtpAlgorithm.Sha1,
+    string? issuer = null)
+    : OneTimePassword(OtpKind.TimeBased, name, secret, digits, algorithm, issuer)
 {
     public int Period { get; } = period;
 

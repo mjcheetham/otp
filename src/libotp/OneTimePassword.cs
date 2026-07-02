@@ -16,6 +16,8 @@ public interface IOneTimePassword
 
     string Name { get; }
 
+    string? Issuer { get; }
+
     int Digits { get; }
 
     OtpAlgorithm Algorithm { get; }
@@ -28,10 +30,12 @@ public abstract class OneTimePassword(
     string name,
     byte[] secret,
     int digits,
-    OtpAlgorithm algorithm) : IOneTimePassword
+    OtpAlgorithm algorithm,
+    string? issuer = null) : IOneTimePassword
 {
     public OtpKind Kind { get; } = kind;
     public string Name { get; } = name;
+    public string? Issuer { get; } = issuer;
     internal byte[] Secret { get; } = secret;
     public int Digits { get; } = digits;
     public OtpAlgorithm Algorithm { get; } = algorithm;

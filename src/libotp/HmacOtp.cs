@@ -5,8 +5,9 @@ public class HmacOtp(
     byte[] secret,
     long counter = 0,
     int digits = 6,
-    OtpAlgorithm algorithm = OtpAlgorithm.Sha1)
-    : OneTimePassword(OtpKind.Hmac, name, secret, digits, algorithm)
+    OtpAlgorithm algorithm = OtpAlgorithm.Sha1,
+    string? issuer = null)
+    : OneTimePassword(OtpKind.Hmac, name, secret, digits, algorithm, issuer)
 {
     public long Counter { get; } = counter;
 

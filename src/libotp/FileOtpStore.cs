@@ -170,6 +170,8 @@ public sealed partial class FileOtpStore : IOtpStore
 
         public OtpKind Kind { get; set; }
 
+        public string? Issuer { get; set; }
+
         public string Secret { get; set; } = string.Empty;
 
         public int Digits { get; set; }
@@ -186,6 +188,7 @@ public sealed partial class FileOtpStore : IOtpStore
             {
                 Name = otp.Name,
                 Kind = otp.Kind,
+                Issuer = otp.Issuer,
                 Digits = otp.Digits,
                 Algorithm = otp.Algorithm
             };
@@ -215,8 +218,8 @@ public sealed partial class FileOtpStore : IOtpStore
             byte[] secret = Base32.Decode(Secret);
             return Kind switch
             {
-                OtpKind.TimeBased => new TimeBasedOtp(Name, secret, Period ?? 30, Digits, Algorithm),
-                OtpKind.Hmac => new HmacOtp(Name, secret, Counter ?? 0, Digits, Algorithm),
+                OtpKind.TimeBased => new TimeBasedOtp(Name, secret, Period ?? 30, Digits, Algorithm, Issuer),
+                OtpKind.Hmac => new HmacOtp(Name, secret, Counter ?? 0, Digits, Algorithm, Issuer),
                 _ => throw new NotSupportedException($"Unknown one-time password kind '{Kind}'.")
             };
         }
