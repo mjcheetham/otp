@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/config/">
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="global.json" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/libotp/libotp.csproj" />
+    <Project Path="src/otp/otp.csproj" />
+  </Folder>
+</Solution>
