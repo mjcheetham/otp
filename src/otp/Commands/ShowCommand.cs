@@ -1,6 +1,7 @@
 using System.CommandLine;
 using System.Globalization;
 using System.Text;
+using Spectre.Console;
 
 namespace Mjcheetham.Otp.Commands;
 
@@ -41,7 +42,7 @@ public class ShowCommand : Command
         IOneTimePassword? otp = await _store.GetAsync(name, cancellationToken);
         if (otp is null)
         {
-            Console.Error.WriteLine($"error: no one-time password named '{name}' was found.");
+            Ui.Error.WriteLine($"error: no one-time password named '{name}' was found.");
             return 1;
         }
 
@@ -144,7 +145,7 @@ public class ShowCommand : Command
                 }
 
                 Line("Secret:", showSecret ? otp.GetSecret() : MaskedSecret);
-                Console.Write(output.ToString());
+                Ui.Out.Write(output.ToString());
                 break;
         }
 

@@ -1,5 +1,6 @@
 using System.CommandLine;
 using System.Globalization;
+using Spectre.Console;
 
 namespace Mjcheetham.Otp.Commands;
 
@@ -40,13 +41,13 @@ public class GetCommand : Command
         IOneTimePassword? otp = await _store.GetAsync(name, cancellationToken);
         if (otp is null)
         {
-            Console.Error.WriteLine($"error: no one-time password named '{name}' was found.");
+            Ui.Error.WriteLine($"error: no one-time password named '{name}' was found.");
             return 1;
         }
 
         if (counter is not null && otp is not HmacOtp)
         {
-            Console.Error.WriteLine("error: --counter applies to counter-based (hotp) one-time passwords only.");
+            Ui.Error.WriteLine("error: --counter applies to counter-based (hotp) one-time passwords only.");
             return 1;
         }
 
@@ -113,10 +114,10 @@ public class GetCommand : Command
                 break;
 
             default:
-                Console.WriteLine(code);
+                Ui.Out.WriteLine(code);
                 if (validForSeconds is not null)
                 {
-                    Console.Error.WriteLine($"Valid for {validForSeconds}s");
+                    Ui.Error.WriteLine($"Valid for {validForSeconds}s");
                 }
 
                 break;

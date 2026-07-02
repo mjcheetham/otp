@@ -1,5 +1,6 @@
 using System.CommandLine;
 using System.CommandLine.Parsing;
+using Spectre.Console;
 
 namespace Mjcheetham.Otp.Commands;
 
@@ -137,7 +138,7 @@ public class AddCommand : Command
         }
         catch (FormatException ex)
         {
-            Console.Error.WriteLine($"error: {ex.Message}");
+            Ui.Error.WriteLine($"error: {ex.Message}");
             return 1;
         }
 
@@ -147,11 +148,11 @@ public class AddCommand : Command
         }
         catch (InvalidOperationException ex)
         {
-            Console.Error.WriteLine($"error: {ex.Message}");
+            Ui.Error.WriteLine($"error: {ex.Message}");
             return 1;
         }
 
-        Console.WriteLine($"Added '{otp.Name}'.");
+        Ui.Out.WriteLine($"Added '{otp.Name}'.");
         return 0;
     }
 

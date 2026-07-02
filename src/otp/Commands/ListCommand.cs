@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Spectre.Console;
 
 namespace Mjcheetham.Otp.Commands;
 
@@ -69,7 +70,7 @@ public class ListCommand : Command
             default:
                 foreach (string name in names)
                 {
-                    Console.WriteLine(name);
+                    Ui.Out.WriteLine(name);
                 }
 
                 break;

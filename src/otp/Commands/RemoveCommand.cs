@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Spectre.Console;
 
 namespace Mjcheetham.Otp.Commands;
 
@@ -36,23 +37,23 @@ public class RemoveCommand : Command
         IOneTimePassword? otp = await _store.GetAsync(name, cancellationToken);
         if (otp is null)
         {
-            Console.Error.WriteLine($"error: no one-time password named '{name}' was found.");
+            Ui.Error.WriteLine($"error: no one-time password named '{name}' was found.");
             return 1;
         }
 
         if (!skipConfirmation && !Confirm(otp))
         {
-            Console.Error.WriteLine("Aborted.");
+            Ui.Error.WriteLine("Aborted.");
             return 0;
         }
 
         if (!await _store.RemoveAsync(otp.Name, cancellationToken))
         {
-            Console.Error.WriteLine($"error: no one-time password named '{name}' was found.");
+            Ui.Error.WriteLine($"error: no one-time password named '{name}' was found.");
             return 1;
         }
 
-        Console.WriteLine($"Removed '{otp.Name}'.");
+        Ui.Out.WriteLine($"Removed '{otp.Name}'.");
         return 0;
     }
 
@@ -62,7 +63,7 @@ public class RemoveCommand : Command
             ? $"'{otp.Name}' ({issuer})"
             : $"'{otp.Name}'";
 
-        Console.Error.Write($"Remove one-time password {label}? [y/N] ");
+        Ui.Error.Write($"Remove one-time password {label}? [y/N] ");
 
         string? answer = Console.ReadLine()?.Trim();
         return string.Equals(answer, "y", StringComparison.OrdinalIgnoreCase) ||
