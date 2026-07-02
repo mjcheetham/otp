@@ -1,8 +1,12 @@
-﻿namespace Mjcheetham.Otp;
+﻿using System.Text.Json.Serialization;
+
+namespace Mjcheetham.Otp;
 
 public enum OtpKind
 {
+    [JsonStringEnumMemberName("totp")]
     TimeBased,
+    [JsonStringEnumMemberName("hotp")]
     Hmac
 }
 
@@ -28,7 +32,7 @@ public abstract class OneTimePassword(
 {
     public OtpKind Kind { get; } = kind;
     public string Name { get; } = name;
-    protected byte[] Secret { get; } = secret;
+    internal byte[] Secret { get; } = secret;
     public int Digits { get; } = digits;
     public OtpAlgorithm Algorithm { get; } = algorithm;
 

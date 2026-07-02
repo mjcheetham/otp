@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace Mjcheetham.Otp;
 
 public static class Base32
@@ -36,5 +38,41 @@ public static class Base32
         }
 
         return output.ToArray();
+    }
+
+    public static string Encode(ReadOnlySpan<byte> data)
+    {
+        if (data.IsEmpty)
+        {
+            return string.Empty;
+        }
+
+        var output = new StringBuilder((data.Length + 4) / 5 * 8);
+        int buffer = 0;
+        int bitsLeft = 0;
+
+        foreach (byte b in data)
+        {
+            buffer = (buffer << 8) | b;
+            bitsLeft += 8;
+
+            while (bitsLeft >= 5)
+            {
+                bitsLeft -= 5;
+                output.Append(Alphabet[(buffer >> bitsLeft) & 0x1f]);
+            }
+        }
+
+        if (bitsLeft > 0)
+        {
+            output.Append(Alphabet[(buffer << (5 - bitsLeft)) & 0x1f]);
+        }
+
+        while (output.Length % 8 != 0)
+        {
+            output.Append('=');
+        }
+
+        return output.ToString();
     }
 }
