@@ -1,0 +1,138 @@
+name: release
+
+on:
+  push:
+    tags: ['*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag to release against (e.g. v1.2.3). A draft release is created for it.
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.vars.outputs.tag }}
+      version: ${{ steps.vars.outputs.version }}
+    steps:
+      - id: vars
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_TAG: ${{ inputs.tag }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            tag="$INPUT_TAG"
+          else
+            tag="$REF_NAME"
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          # Drop a leading "v" so v1.2.3 -> 1.2.3 in artifact names.
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: prepare
+    name: ${{ matrix.rid }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { rid: osx-x64,     os: macos-latest }
+          - { rid: osx-arm64,   os: macos-latest }
+          - { rid: linux-x64,   os: ubuntu-24.04 }
+          - { rid: linux-arm64, os: ubuntu-24.04-arm }
+          - { rid: linux-arm,   os: ubuntu-24.04-arm }
+          - { rid: win-x64,     os: windows-latest }
+          - { rid: win-arm64,   os: windows-11-arm }
+    env:
+      PUBDIR: out/publish/otp/release_${{ matrix.rid }}
+      SYMDIR: out/publish/otp/release_${{ matrix.rid }}-symbols
+      STEM: otp-${{ matrix.rid }}-${{ needs.prepare.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      # linux-arm (32-bit armhf) has no native runner, so cross-compile from
+      # x64. Every other RID builds natively (arm64 Linux/Windows and macOS,
+      # where Apple's clang produces both osx-x64 and osx-arm64).
+      - name: Install armhf cross-compilation toolchain
+        if: matrix.rid == 'linux-arm'
+        run: |
+          sudo apt-get update
+          # Brings in the armhf cross-compilation toolchain, including binutils.
+          sudo apt-get install -y gcc-arm-linux-gnueabihf
+
+      - name: Publish
+        run: dotnet publish src/otp -c Release -r ${{ matrix.rid }}
+
+      # Separate the debug symbols from the product so each ships in its own
+      # archive. Only known symbol files are moved out; everything else the
+      # publish produces (the executable today, maybe READMEs/assets later)
+      # stays behind as the product.
+      - name: Stage symbols (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir -p "$SYMDIR"
+          find "$PUBDIR" -mindepth 1 -maxdepth 1 \
+            \( -name '*.pdb' -o -name '*.dbg' -o -name '*.dSYM' \) \
+            -exec mv {} "$SYMDIR/" \;
+
+      - name: Stage symbols (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path $env:SYMDIR | Out-Null
+          Get-ChildItem -Path "$env:PUBDIR/*.pdb" -ErrorAction SilentlyContinue |
+            Move-Item -Destination $env:SYMDIR
+
+      - name: Package (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          tar -czf "$STEM.tar.gz" -C "$PUBDIR" .
+          tar -czf "$STEM-symbols.tar.gz" -C "$SYMDIR" .
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Compress-Archive -Path "$env:PUBDIR/*" -DestinationPath "$env:STEM.zip" -Force
+          Compress-Archive -Path "$env:SYMDIR/*" -DestinationPath "$env:STEM-symbols.zip" -Force
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.rid }}
+          path: ${{ env.STEM }}*
+          if-no-files-found: error
+
+  release:
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: release-*
+          merge-multiple: true
+
+      - name: Create draft release
+        env:
+          TAG: ${{ needs.prepare.outputs.tag }}
+        run: >
+          gh release create "$TAG"
+          --draft
+          --target "$GITHUB_SHA"
+          --title "$TAG"
+          --generate-notes
+          dist/*

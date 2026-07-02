@@ -1,0 +1,52 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    name: ${{ matrix.rid }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { rid: osx-x64,     os: macos-latest }
+          - { rid: osx-arm64,   os: macos-latest }
+          - { rid: linux-x64,   os: ubuntu-24.04 }
+          - { rid: linux-arm64, os: ubuntu-24.04-arm }
+          - { rid: linux-arm,   os: ubuntu-24.04-arm }
+          - { rid: win-x64,     os: windows-latest }
+          - { rid: win-arm64,   os: windows-11-arm }
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      # linux-arm (32-bit armhf) has no native runner, so cross-compile from
+      # x64. Every other RID builds natively (arm64 Linux/Windows and macOS,
+      # where Apple's clang produces both osx-x64 and osx-arm64).
+      - name: Install armhf cross-compilation toolchain
+        if: matrix.rid == 'linux-arm'
+        run: |
+          sudo apt-get update
+          # Brings in the armhf cross-compilation toolchain, including binutils.
+          sudo apt-get install -y gcc-arm-linux-gnueabihf
+
+      - name: Publish
+        run: dotnet publish src/otp -c Release -r ${{ matrix.rid }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.rid }}
+          path: out/publish/otp/release_${{ matrix.rid }}/**/*
+          if-no-files-found: error
