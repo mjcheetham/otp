@@ -23,6 +23,8 @@ public interface IOneTimePassword
     OtpAlgorithm Algorithm { get; }
 
     string GetCode();
+
+    string GetSecret();
 }
 
 public abstract class OneTimePassword(
@@ -41,6 +43,8 @@ public abstract class OneTimePassword(
     public OtpAlgorithm Algorithm { get; } = algorithm;
 
     public abstract string GetCode();
+
+    public string GetSecret() => Base32.Encode(Secret);
 
     protected string GenerateCode(long counter) =>
         OtpGenerator.Generate(Secret, counter, Digits, Algorithm);
