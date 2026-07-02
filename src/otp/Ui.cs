@@ -1,6 +1,6 @@
 using Spectre.Console;
 
-namespace Mjcheetham.Otp.Commands;
+namespace Mjcheetham.Otp;
 
 /// <summary>
 /// Human-facing console endpoints rendered through Spectre.Console. Standard

@@ -1,6 +1,6 @@
 using System.CommandLine.Parsing;
 
-namespace Mjcheetham.Otp.Commands;
+namespace Mjcheetham.Otp;
 
 internal static class OtpTypeParser
 {

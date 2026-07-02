@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json;
 
-namespace Mjcheetham.Otp.Commands;
+namespace Mjcheetham.Otp;
 
 internal enum OutputFormat
 {
