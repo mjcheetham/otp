@@ -51,8 +51,7 @@ public class RemoveCommand : Command
 
             if (!Confirm(otp))
             {
-                Ui.Error.MarkupLine("[grey]Aborted.[/]");
-                return 0;
+                return 1;
             }
         }
 
