@@ -5,6 +5,8 @@ namespace Mjcheetham.Otp.Commands;
 
 public class AddCommand : Command
 {
+    private readonly IOtpStore _store;
+
     private readonly Argument<string> _nameArg = new("name")
     {
         Description = "Name/label to store the one-time password under. " +
@@ -60,8 +62,10 @@ public class AddCommand : Command
         HelpName = "sha1|sha256|sha512"
     };
 
-    public AddCommand() : base("add", "Add a new one-time password.")
+    public AddCommand(IOtpStore store) : base("add", "Add a new one-time password.")
     {
+        _store = store;
+
         Add(_nameArg);
         Add(_uriOpt);
         Add(_secretOpt);
@@ -121,9 +125,47 @@ public class AddCommand : Command
         }
     }
 
-    private Task<int> ExecuteAsync(ParseResult result, CancellationToken cancellationToken)
+    private async Task<int> ExecuteAsync(ParseResult result, CancellationToken cancellationToken)
     {
-        Console.Error.WriteLine("otp add: not yet implemented.");
-        return Task.FromResult(1);
+        IOneTimePassword otp;
+        try
+        {
+            string? uri = result.GetValue(_uriOpt);
+            otp = !string.IsNullOrWhiteSpace(uri)
+                ? OtpAuthUri.Parse(uri)
+                : BuildFromOptions(result);
+        }
+        catch (FormatException ex)
+        {
+            Console.Error.WriteLine($"error: {ex.Message}");
+            return 1;
+        }
+
+        try
+        {
+            await _store.AddAsync(otp, cancellationToken);
+        }
+        catch (InvalidOperationException ex)
+        {
+            Console.Error.WriteLine($"error: {ex.Message}");
+            return 1;
+        }
+
+        Console.WriteLine($"Added '{otp.Name}'.");
+        return 0;
+    }
+
+    private IOneTimePassword BuildFromOptions(ParseResult result)
+    {
+        string name = result.GetValue(_nameArg)!;
+        byte[] secret = Base32.Decode(result.GetValue(_secretOpt)!);
+        OtpKind kind = result.GetValue(_typeOpt);
+        string? issuer = result.GetValue(_issuerOpt);
+        int digits = result.GetValue(_digitsOpt);
+        OtpAlgorithm algorithm = result.GetValue(_algorithmOpt);
+
+        return kind == OtpKind.Hmac
+            ? new HmacOtp(name, secret, result.GetValue(_counterOpt), digits, algorithm, issuer)
+            : new TimeBasedOtp(name, secret, result.GetValue(_periodOpt), digits, algorithm, issuer);
     }
 }

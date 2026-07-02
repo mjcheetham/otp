@@ -6,7 +6,7 @@ using Mjcheetham.Otp.Commands;
 var store = new FileOtpStore(FileOtpStore.GetDefaultPath());
 
 var rootCommand = new RootCommand("Create and manage one-time passwords (OTPs).");
-rootCommand.Add(new AddCommand());
+rootCommand.Add(new AddCommand(store));
 rootCommand.Add(new ListCommand(store));
 rootCommand.Add(new GetCommand(store));
 rootCommand.Add(new RemoveCommand());
