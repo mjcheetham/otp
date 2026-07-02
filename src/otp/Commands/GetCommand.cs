@@ -51,8 +51,19 @@ public class GetCommand : Command
         }
 
         string code;
+        int? validForSeconds = null;
+        DateTimeOffset? expiresAt = null;
+
         switch (otp)
         {
+            case TimeBasedOtp timeBased:
+                DateTimeOffset now = DateTimeOffset.UtcNow;
+                code = timeBased.GetCode(now);
+                long nextBoundary = (now.ToUnixTimeSeconds() / timeBased.Period + 1) * timeBased.Period;
+                expiresAt = DateTimeOffset.FromUnixTimeSeconds(nextBoundary);
+                validForSeconds = (int)(nextBoundary - now.ToUnixTimeSeconds());
+                break;
+
             case HmacOtp counterBased:
                 code = counter is not null ? counterBased.GetCode(counter.Value) : counterBased.GetCode();
                 break;
@@ -70,7 +81,12 @@ public class GetCommand : Command
                     writer.WriteStartObject();
                     writer.WriteString("code", code);
                     writer.WriteString("type", OtpFormat.TypeMachine(otp.Kind));
-                    if (otp is HmacOtp counterBased)
+                    if (validForSeconds is not null)
+                    {
+                        writer.WriteNumber("valid_for_seconds", validForSeconds.Value);
+                        writer.WriteString("expires_at", OtpFormat.IsoUtc(expiresAt!.Value));
+                    }
+                    else if (otp is HmacOtp counterBased)
                     {
                         writer.WriteNumber("counter", counter ?? counterBased.Counter);
                     }
@@ -83,7 +99,12 @@ public class GetCommand : Command
                 var records = new NulWriter()
                     .Field("code", code)
                     .Field("type", OtpFormat.TypeMachine(otp.Kind));
-                if (otp is HmacOtp counterBased)
+                if (validForSeconds is not null)
+                {
+                    records.Field("valid_for_seconds", validForSeconds.Value.ToString(CultureInfo.InvariantCulture));
+                    records.Field("expires_at", OtpFormat.IsoUtc(expiresAt!.Value));
+                }
+                else if (otp is HmacOtp counterBased)
                 {
                     records.Field("counter", (counter ?? counterBased.Counter).ToString(CultureInfo.InvariantCulture));
                 }
@@ -93,6 +114,11 @@ public class GetCommand : Command
 
             default:
                 Console.WriteLine(code);
+                if (validForSeconds is not null)
+                {
+                    Console.Error.WriteLine($"Valid for {validForSeconds}s");
+                }
+
                 break;
         }
 
