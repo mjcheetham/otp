@@ -37,23 +37,23 @@ public class RemoveCommand : Command
         IOneTimePassword? otp = await _store.GetAsync(name, cancellationToken);
         if (otp is null)
         {
-            Ui.Error.WriteLine($"error: no one-time password named '{name}' was found.");
+            Ui.ReportError($"no one-time password named '{name}' was found.");
             return 1;
         }
 
         if (!skipConfirmation && !Confirm(otp))
         {
-            Ui.Error.WriteLine("Aborted.");
+            Ui.Error.MarkupLine("[grey]Aborted.[/]");
             return 0;
         }
 
         if (!await _store.RemoveAsync(otp.Name, cancellationToken))
         {
-            Ui.Error.WriteLine($"error: no one-time password named '{name}' was found.");
+            Ui.ReportError($"no one-time password named '{name}' was found.");
             return 1;
         }
 
-        Ui.Out.WriteLine($"Removed '{otp.Name}'.");
+        Ui.Out.MarkupLine($"[green]Removed[/] [bold]'{Markup.Escape(otp.Name)}'[/].");
         return 0;
     }
 
@@ -63,7 +63,7 @@ public class RemoveCommand : Command
             ? $"'{otp.Name}' ({issuer})"
             : $"'{otp.Name}'";
 
-        Ui.Error.Write($"Remove one-time password {label}? [y/N] ");
+        Ui.Error.Markup($"Remove one-time password [bold]{Markup.Escape(label)}[/]? [grey][[y/N]][/] ");
 
         string? answer = Console.ReadLine()?.Trim();
         return string.Equals(answer, "y", StringComparison.OrdinalIgnoreCase) ||

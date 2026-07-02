@@ -41,13 +41,13 @@ public class GetCommand : Command
         IOneTimePassword? otp = await _store.GetAsync(name, cancellationToken);
         if (otp is null)
         {
-            Ui.Error.WriteLine($"error: no one-time password named '{name}' was found.");
+            Ui.ReportError($"no one-time password named '{name}' was found.");
             return 1;
         }
 
         if (counter is not null && otp is not HmacOtp)
         {
-            Ui.Error.WriteLine("error: --counter applies to counter-based (hotp) one-time passwords only.");
+            Ui.ReportError("--counter applies to counter-based (hotp) one-time passwords only.");
             return 1;
         }
 
@@ -114,10 +114,11 @@ public class GetCommand : Command
                 break;
 
             default:
-                Ui.Out.WriteLine(code);
+                Ui.Out.MarkupLine($"[bold]{Markup.Escape(code)}[/]");
                 if (validForSeconds is not null)
                 {
-                    Ui.Error.WriteLine($"Valid for {validForSeconds}s");
+                    string style = validForSeconds.Value <= 5 ? "yellow" : "grey";
+                    Ui.Error.MarkupLine($"[{style}]Valid for {validForSeconds.Value}s[/]");
                 }
 
                 break;

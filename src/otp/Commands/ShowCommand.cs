@@ -1,6 +1,5 @@
 using System.CommandLine;
 using System.Globalization;
-using System.Text;
 using Spectre.Console;
 
 namespace Mjcheetham.Otp.Commands;
@@ -42,7 +41,7 @@ public class ShowCommand : Command
         IOneTimePassword? otp = await _store.GetAsync(name, cancellationToken);
         if (otp is null)
         {
-            Ui.Error.WriteLine($"error: no one-time password named '{name}' was found.");
+            Ui.ReportError($"no one-time password named '{name}' was found.");
             return 1;
         }
 
@@ -122,10 +121,18 @@ public class ShowCommand : Command
                 break;
 
             default:
-                var output = new StringBuilder();
-                void Line(string label, string value) => output.AppendLine($"{label,-11}{value}");
+                void Line(string label, string value, string? style = null)
+                {
+                    string rendered = Markup.Escape(value);
+                    if (style is not null)
+                    {
+                        rendered = $"[{style}]{rendered}[/]";
+                    }
 
-                Line("Name:", otp.Name);
+                    Ui.Out.MarkupLine($"[grey]{label,-11}[/]{rendered}");
+                }
+
+                Line("Name:", otp.Name, "bold");
                 if (issuer is not null)
                 {
                     Line("Issuer:", issuer);
@@ -144,8 +151,7 @@ public class ShowCommand : Command
                     Line("Counter:", counter.Value.ToString(CultureInfo.InvariantCulture));
                 }
 
-                Line("Secret:", showSecret ? otp.GetSecret() : MaskedSecret);
-                Ui.Out.Write(output.ToString());
+                Line("Secret:", showSecret ? otp.GetSecret() : MaskedSecret, showSecret ? "yellow" : "grey");
                 break;
         }
 

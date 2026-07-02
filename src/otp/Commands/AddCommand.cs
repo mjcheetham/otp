@@ -138,7 +138,7 @@ public class AddCommand : Command
         }
         catch (FormatException ex)
         {
-            Ui.Error.WriteLine($"error: {ex.Message}");
+            Ui.ReportError(ex.Message);
             return 1;
         }
 
@@ -148,11 +148,11 @@ public class AddCommand : Command
         }
         catch (InvalidOperationException ex)
         {
-            Ui.Error.WriteLine($"error: {ex.Message}");
+            Ui.ReportError(ex.Message);
             return 1;
         }
 
-        Ui.Out.WriteLine($"Added '{otp.Name}'.");
+        Ui.Out.MarkupLine($"[green]Added[/] [bold]'{Markup.Escape(otp.Name)}'[/].");
         return 0;
     }
 

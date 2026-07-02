@@ -16,4 +16,7 @@ internal static class Ui
     {
         Out = new AnsiConsoleOutput(Console.Error)
     });
+
+    public static void ReportError(string message) =>
+        Error.MarkupLine($"[red]error:[/] {Markup.Escape(message)}");
 }
