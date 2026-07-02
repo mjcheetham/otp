@@ -5,6 +5,8 @@ namespace Mjcheetham.Otp;
 public interface IOtpStore
 {
     IAsyncEnumerable<IOneTimePassword> ListAsync(CancellationToken ct = default);
+
+    ValueTask<IOneTimePassword?> GetAsync(string name, CancellationToken ct = default);
 }
 
 public class InMemoryOtpStore : IOtpStore, IEnumerable<IOneTimePassword>
@@ -19,6 +21,12 @@ public class InMemoryOtpStore : IOtpStore, IEnumerable<IOneTimePassword>
     public IAsyncEnumerable<IOneTimePassword> ListAsync(CancellationToken ct = default)
     {
         return _otps.ToAsyncEnumerable();
+    }
+
+    public ValueTask<IOneTimePassword?> GetAsync(string name, CancellationToken ct = default)
+    {
+        IOneTimePassword? match = _otps.Find(o => string.Equals(o.Name, name, StringComparison.OrdinalIgnoreCase));
+        return ValueTask.FromResult(match);
     }
 
     public IEnumerator<IOneTimePassword> GetEnumerator() => _otps.GetEnumerator();

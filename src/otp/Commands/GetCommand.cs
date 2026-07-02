@@ -4,6 +4,8 @@ namespace Mjcheetham.Otp.Commands;
 
 public class GetCommand : Command
 {
+    private readonly IOtpStore _store;
+
     private readonly Argument<string> _nameArg = new("name")
     {
         Description = "Name of the one-time password."
@@ -14,8 +16,10 @@ public class GetCommand : Command
         Description = "Counter value to use for this code (counter-based OTPs only)."
     };
 
-    public GetCommand() : base("get", "Generate the current code for a stored one-time password.")
+    public GetCommand(IOtpStore store) : base("get", "Generate the current code for a stored one-time password.")
     {
+        _store = store;
+
         Aliases.Add("code");
 
         Add(_nameArg);
@@ -24,9 +28,37 @@ public class GetCommand : Command
         SetAction(ExecuteAsync);
     }
 
-    private Task<int> ExecuteAsync(ParseResult result, CancellationToken cancellationToken)
+    private async Task<int> ExecuteAsync(ParseResult result, CancellationToken cancellationToken)
     {
-        Console.Error.WriteLine("otp get: not yet implemented.");
-        return Task.FromResult(1);
+        string name = result.GetRequiredValue(_nameArg);
+        long? counter = result.GetValue(_counterOpt);
+
+        IOneTimePassword? otp = await _store.GetAsync(name, cancellationToken);
+        if (otp is null)
+        {
+            Console.Error.WriteLine($"error: no one-time password named '{name}' was found.");
+            return 1;
+        }
+
+        string code;
+        if (counter is not null)
+        {
+            if (otp is HmacOtp hotp)
+            {
+                code = hotp.GetCode(counter.Value);
+            }
+            else
+            {
+                Console.Error.WriteLine("error: --counter applies to counter-based (hotp) one-time passwords only.");
+                return 1;
+            }
+        }
+        else
+        {
+            code = otp.GetCode();
+        }
+
+        Console.WriteLine(code);
+        return 0;
     }
 }
