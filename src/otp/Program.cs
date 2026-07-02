@@ -3,7 +3,7 @@ using System.CommandLine.Parsing;
 using Mjcheetham.Otp;
 using Mjcheetham.Otp.Commands;
 
-var store = new InMemoryOtpStore();
+var store = new FileOtpStore(FileOtpStore.GetDefaultPath());
 
 var rootCommand = new RootCommand("Create and manage one-time passwords (OTPs).");
 rootCommand.Add(new AddCommand());
