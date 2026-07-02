@@ -50,7 +50,17 @@ public static class OtpAuthUri
         }
 
         byte[] secret = Base32.Decode(secretValue);
+        if (secret.Length == 0)
+        {
+            throw new FormatException("The otpauth URI 'secret' does not contain any data.");
+        }
+
         int digits = ParseInt(query, "digits", 6);
+        if (!OtpGenerator.TryValidateDigits(digits, out string? digitsError))
+        {
+            throw new FormatException(digitsError);
+        }
+
         OtpAlgorithm algorithm = ParseAlgorithm(query.GetValueOrDefault("algorithm"));
 
         string? issuer = query.GetValueOrDefault("issuer");
@@ -59,9 +69,24 @@ public static class OtpAuthUri
             issuer = labelIssuer;
         }
 
-        return kind == OtpKind.Hmac
-            ? new HmacOtp(name, secret, ParseLong(query, "counter", 0), digits, algorithm, issuer)
-            : new TimeBasedOtp(name, secret, ParseInt(query, "period", 30), digits, algorithm, issuer);
+        if (kind == OtpKind.Hmac)
+        {
+            long counter = ParseLong(query, "counter", 0);
+            if (!HmacOtp.TryValidateCounter(counter, out string? counterError))
+            {
+                throw new FormatException(counterError);
+            }
+
+            return new HmacOtp(name, secret, counter, digits, algorithm, issuer);
+        }
+
+        int period = ParseInt(query, "period", 30);
+        if (!TimeBasedOtp.TryValidatePeriod(period, out string? periodError))
+        {
+            throw new FormatException(periodError);
+        }
+
+        return new TimeBasedOtp(name, secret, period, digits, algorithm, issuer);
     }
 
     private static Dictionary<string, string> ParseQuery(string query)

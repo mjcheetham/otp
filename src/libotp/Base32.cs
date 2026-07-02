@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace Mjcheetham.Otp;
@@ -9,6 +10,33 @@ public static class Base32
     public static byte[] Decode(string value)
     {
         ArgumentNullException.ThrowIfNull(value);
+
+        if (!TryDecode(value, out byte[]? decoded, out string? error))
+        {
+            throw new FormatException(error);
+        }
+
+        return decoded;
+    }
+
+    /// <summary>
+    /// Decodes a Base32 string without throwing. Whitespace and '=' padding are
+    /// ignored. Returns <see langword="false"/> with a human-readable
+    /// <paramref name="error"/> when the input contains an invalid character.
+    /// </summary>
+    public static bool TryDecode(
+        string value,
+        [NotNullWhen(true)] out byte[]? bytes,
+        [NotNullWhen(false)] out string? error)
+    {
+        bytes = null;
+        error = null;
+
+        if (value is null)
+        {
+            error = "A Base32 value is required.";
+            return false;
+        }
 
         var output = new List<byte>(value.Length * 5 / 8);
         int buffer = 0;
@@ -24,7 +52,8 @@ public static class Base32
             int index = Alphabet.IndexOf(char.ToUpperInvariant(rawChar), StringComparison.Ordinal);
             if (index < 0)
             {
-                throw new FormatException($"'{rawChar}' is not a valid Base32 character.");
+                error = $"'{rawChar}' is not a valid Base32 character.";
+                return false;
             }
 
             buffer = (buffer << 5) | index;
@@ -37,7 +66,8 @@ public static class Base32
             }
         }
 
-        return output.ToArray();
+        bytes = output.ToArray();
+        return true;
     }
 
     public static string Encode(ReadOnlySpan<byte> data)

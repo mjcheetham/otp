@@ -27,20 +27,41 @@ public interface IOneTimePassword
     string GetSecret();
 }
 
-public abstract class OneTimePassword(
-    OtpKind kind,
-    string name,
-    byte[] secret,
-    int digits,
-    OtpAlgorithm algorithm,
-    string? issuer = null) : IOneTimePassword
+public abstract class OneTimePassword : IOneTimePassword
 {
-    public OtpKind Kind { get; } = kind;
-    public string Name { get; } = name;
-    public string? Issuer { get; } = issuer;
-    internal byte[] Secret { get; } = secret;
-    public int Digits { get; } = digits;
-    public OtpAlgorithm Algorithm { get; } = algorithm;
+    protected OneTimePassword(
+        OtpKind kind,
+        string name,
+        byte[] secret,
+        int digits,
+        OtpAlgorithm algorithm,
+        string? issuer = null)
+    {
+        ArgumentNullException.ThrowIfNull(secret);
+        if (secret.Length == 0)
+        {
+            throw new ArgumentException("A secret is required.", nameof(secret));
+        }
+
+        if (!OtpGenerator.TryValidateDigits(digits, out string? error))
+        {
+            throw new ArgumentOutOfRangeException(nameof(digits), digits, error);
+        }
+
+        Kind = kind;
+        Name = name;
+        Secret = secret;
+        Digits = digits;
+        Algorithm = algorithm;
+        Issuer = issuer;
+    }
+
+    public OtpKind Kind { get; }
+    public string Name { get; }
+    public string? Issuer { get; }
+    internal byte[] Secret { get; }
+    public int Digits { get; }
+    public OtpAlgorithm Algorithm { get; }
 
     public abstract string GetCode();
 

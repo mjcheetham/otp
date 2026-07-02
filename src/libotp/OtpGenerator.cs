@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Security.Cryptography;
 
@@ -6,16 +7,32 @@ namespace Mjcheetham.Otp;
 
 public static class OtpGenerator
 {
+    /// <summary>
+    /// Validates that <paramref name="digits"/> is within the supported range
+    /// (1–9). Returns <see langword="false"/> and a human-readable
+    /// <paramref name="error"/> message when it is not.
+    /// </summary>
+    public static bool TryValidateDigits(int digits, [NotNullWhen(false)] out string? error)
+    {
+        if (digits is < 1 or > 9)
+        {
+            error = "Digits must be between 1 and 9.";
+            return false;
+        }
+
+        error = null;
+        return true;
+    }
+
     public static string Generate(
         ReadOnlySpan<byte> secret,
         long counter,
         int digits,
         OtpAlgorithm algorithm)
     {
-        if (digits is < 1 or > 9)
+        if (!TryValidateDigits(digits, out string? error))
         {
-            throw new ArgumentOutOfRangeException(
-                nameof(digits), digits, "Digits must be between 1 and 9.");
+            throw new ArgumentOutOfRangeException(nameof(digits), digits, error);
         }
 
         Span<byte> message = stackalloc byte[sizeof(long)];
