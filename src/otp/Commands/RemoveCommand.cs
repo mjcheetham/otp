@@ -41,10 +41,19 @@ public class RemoveCommand : Command
             return 1;
         }
 
-        if (!skipConfirmation && !Confirm(otp))
+        if (!skipConfirmation)
         {
-            Ui.Error.MarkupLine("[grey]Aborted.[/]");
-            return 0;
+            if (Console.IsInputRedirected || !Ui.Error.Profile.Capabilities.Interactive)
+            {
+                Ui.ReportError($"refusing to remove '{name}' without confirmation; re-run with --yes.");
+                return 1;
+            }
+
+            if (!Confirm(otp))
+            {
+                Ui.Error.MarkupLine("[grey]Aborted.[/]");
+                return 0;
+            }
         }
 
         if (!await _store.RemoveAsync(otp.Name, cancellationToken))
@@ -63,10 +72,10 @@ public class RemoveCommand : Command
             ? $"'{otp.Name}' ({issuer})"
             : $"'{otp.Name}'";
 
-        Ui.Error.Markup($"Remove one-time password [bold]{Markup.Escape(label)}[/]? [grey][[y/N]][/] ");
-
-        string? answer = Console.ReadLine()?.Trim();
-        return string.Equals(answer, "y", StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(answer, "yes", StringComparison.OrdinalIgnoreCase);
+        return Ui.Error.Prompt(
+            new ConfirmationPrompt($"Remove one-time password {Markup.Escape(label)}?")
+            {
+                DefaultValue = false
+            });
     }
 }
