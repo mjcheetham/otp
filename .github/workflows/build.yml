@@ -68,7 +68,7 @@ jobs:
 
       - uses: actions/upload-artifact@v7
         with:
-          name: packages
+          name: nupkg
           path: |
             out/package/release/*.nupkg
             out/package/release/*.snupkg
