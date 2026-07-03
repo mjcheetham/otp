@@ -18,7 +18,12 @@ public class ShowCommand : Command
 
     private readonly Option<bool> _showSecretOpt = new("--show-secret")
     {
-        Description = "Reveal the shared secret instead of masking it."
+        Description = "Reveal the shared secret, including within the URI, instead of masking it."
+    };
+
+    private readonly Option<bool> _uriOpt = new("--uri", "-u")
+    {
+        Description = "Print only the otpauth:// URI to standard output."
     };
 
     public ShowCommand(IOtpStore store) : base("show", "Show the details of a stored one-time password.")
@@ -27,6 +32,7 @@ public class ShowCommand : Command
 
         Add(_nameArg);
         Add(_showSecretOpt);
+        Add(_uriOpt);
         _format.AddTo(this);
 
         SetAction(ExecuteAsync);
@@ -45,10 +51,24 @@ public class ShowCommand : Command
             return 1;
         }
 
+        if (result.GetValue(_uriOpt))
+        {
+            Console.Out.WriteLine(OtpAuthUri.Format(otp));
+            return 0;
+        }
+
         string? issuer = string.IsNullOrEmpty(otp.Issuer) ? null : otp.Issuer;
         int? period = otp is TimeBasedOtp timeBased ? timeBased.Period : null;
         long? counter = otp is HmacOtp counterBased ? counterBased.Counter : null;
-        string? secret = showSecret ? otp.GetSecret() : null;
+        string secretValue = otp.GetSecret();
+        string? secret = showSecret ? secretValue : null;
+
+        // The URI is always shown; its embedded secret is masked unless the
+        // secret is being revealed. The JSON/NUL forms mirror the secret field
+        // (null/omitted when hidden) so only the human view carries the mask.
+        string fullUri = OtpAuthUri.Format(otp);
+        string maskedUri = fullUri.Replace("secret=" + secretValue.TrimEnd('='), "secret=" + MaskedSecret);
+        string? uri = showSecret ? fullUri : null;
 
         switch (format)
         {
@@ -88,6 +108,15 @@ public class ShowCommand : Command
                         writer.WriteNull("secret");
                     }
 
+                    if (uri is not null)
+                    {
+                        writer.WriteString("uri", uri);
+                    }
+                    else
+                    {
+                        writer.WriteNull("uri");
+                    }
+
                     writer.WriteEndObject();
                 }));
                 break;
@@ -115,6 +144,11 @@ public class ShowCommand : Command
                 if (secret is not null)
                 {
                     records.Field("secret", secret);
+                }
+
+                if (uri is not null)
+                {
+                    records.Field("uri", uri);
                 }
 
                 Console.Write(records.ToString());
@@ -151,7 +185,9 @@ public class ShowCommand : Command
                     Line("Counter:", counter.Value.ToString(CultureInfo.InvariantCulture));
                 }
 
-                Line("Secret:", showSecret ? otp.GetSecret() : MaskedSecret, showSecret ? "yellow" : "grey");
+                Line("Secret:", showSecret ? secretValue : MaskedSecret, showSecret ? "yellow" : "grey");
+                Line("URI:", uri ?? maskedUri, showSecret ? "yellow" : "grey");
+
                 break;
         }
 
