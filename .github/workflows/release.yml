@@ -187,3 +187,36 @@ jobs:
           --title "$TAG"
           --generate-notes
           dist/*
+
+  publish:
+    needs: [build, pack]
+    # Real releases only; dispatch dry runs never publish to nuget.org.
+    if: github.event_name != 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    # The production environment gates publishing: its protection rules add a
+    # manual approval step, and it holds the NUGET_USER secret used below.
+    environment: production
+    permissions:
+      id-token: write   # mint the OIDC token exchanged for a nuget.org API key
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: release-nupkg
+          path: nupkg
+
+      # Trusted publishing: exchange this run's OIDC token for a short-lived
+      # nuget.org API key rather than storing a long-lived secret.
+      - name: NuGet login
+        id: login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      # Pushes both packages; each .nupkg's sidecar .snupkg is sent to the
+      # symbol server automatically.
+      - name: Push to nuget.org
+        run: >
+          dotnet nuget push "nupkg/*.nupkg"
+          --api-key "${{ steps.login.outputs.NUGET_API_KEY }}"
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
