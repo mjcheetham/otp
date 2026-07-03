@@ -156,7 +156,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: release-nupkg
-          path: out/package/release/*.nupkg
+          path: |
+            out/package/release/*.nupkg
+            out/package/release/*.snupkg
           if-no-files-found: error
 
   release:
