@@ -1,5 +1,9 @@
+using System.Collections;
 using System.CommandLine;
+using System.CommandLine.Parsing;
 using System.Globalization;
+using System.Text;
+using QRCoder;
 using Spectre.Console;
 
 namespace Mjcheetham.Otp.Commands;
@@ -26,6 +30,11 @@ public class ShowCommand : Command
         Description = "Print only the otpauth:// URI to standard output."
     };
 
+    private readonly Option<bool> _qrOpt = new("--qr")
+    {
+        Description = "Print the otpauth:// URI as a QR code to standard output."
+    };
+
     public ShowCommand(IOtpStore store) : base("show", "Show the details of a stored one-time password.")
     {
         _store = store;
@@ -33,9 +42,19 @@ public class ShowCommand : Command
         Add(_nameArg);
         Add(_showSecretOpt);
         Add(_uriOpt);
+        Add(_qrOpt);
         _format.AddTo(this);
 
+        Validators.Add(Validate);
         SetAction(ExecuteAsync);
+    }
+
+    private void Validate(CommandResult result)
+    {
+        if (result.GetValue(_uriOpt) && result.GetValue(_qrOpt))
+        {
+            result.AddError("--uri and --qr cannot be combined.");
+        }
     }
 
     private async Task<int> ExecuteAsync(ParseResult result, CancellationToken cancellationToken)
@@ -51,9 +70,43 @@ public class ShowCommand : Command
             return 1;
         }
 
+        string fullUri = OtpAuthUri.Format(otp);
         if (result.GetValue(_uriOpt))
         {
-            Console.Out.WriteLine(OtpAuthUri.Format(otp));
+            // Do not use AnsiConsole here to provide the plainest of output for consumers
+            Console.Out.WriteLine(fullUri);
+            return 0;
+        }
+
+        if (result.GetValue(_qrOpt))
+        {
+            var generator = new QRCodeGenerator();
+            QRCodeData qrCode = generator.CreateQrCode(fullUri, QRCodeGenerator.ECCLevel.M);
+            (int width, int height) = qrCode.GetDimensions();
+
+            // Use canvas if this is a real TTY with colourful output
+            if (Ui.Out.Profile.Capabilities.Interactive &&
+                Ui.Out.Profile.Capabilities.ColorSystem != ColorSystem.NoColors)
+            {
+                var canvas = new Canvas(width, height);
+                qrCode.ForEachPixel(p => canvas.SetPixel(p.X, p.Y, p.IsSet ? Color.Black : Color.White));
+                Ui.Out.Write(canvas);
+            }
+            else // Otherwise print an ASCII-art QR code
+            {
+                var sb = new StringBuilder();
+                qrCode.ForEachRow(r =>
+                {
+                    foreach (bool bit in r.Bits)
+                    {
+                        sb.Append(bit ? "██" : "  ");
+                    }
+                    sb.AppendLine();
+                });
+                // Written raw rather than through the wrapping console so the wide
+                // QR rows are not broken across lines.
+                Console.Out.Write(sb.ToString());
+            }
             return 0;
         }
 
@@ -66,7 +119,6 @@ public class ShowCommand : Command
         // The URI is always shown; its embedded secret is masked unless the
         // secret is being revealed. The JSON/NUL forms mirror the secret field
         // (null/omitted when hidden) so only the human view carries the mask.
-        string fullUri = OtpAuthUri.Format(otp);
         string maskedUri = fullUri.Replace("secret=" + secretValue.TrimEnd('='), "secret=" + MaskedSecret);
         string? uri = showSecret ? fullUri : null;
 

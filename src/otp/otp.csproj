@@ -16,6 +16,7 @@
   <ItemGroup>
     <PackageReference Include="System.CommandLine" />
     <PackageReference Include="Spectre.Console" />
+    <PackageReference Include="QRCoder" />
   </ItemGroup>
 
 </Project>
