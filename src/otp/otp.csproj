@@ -30,6 +30,21 @@
     <PackageTags>otp;totp;hotp;2fa;mfa;authenticator;cli;dotnet-tool</PackageTags>
   </PropertyGroup>
 
+  <!--
+    Keep the packed tool free of symbol and host files, without affecting the
+    native release binaries. `dotnet pack` for a tool publishes without a
+    runtime identifier, so scope these to the RID-less build; `dotnet publish
+    -r <rid>` (the native AOT release) keeps its apphost and symbols such as the
+    macOS .dSYM. The tool runs through the dotnet host, so it needs no apphost;
+    CopyOutputSymbolsToPublishDirectory drops the tool's own PDB and narrowing
+    AllowedReferenceRelatedFileExtensions drops the bundled library's PDB.
+  -->
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' == ''">
+    <UseAppHost>false</UseAppHost>
+    <CopyOutputSymbolsToPublishDirectory>false</CopyOutputSymbolsToPublishDirectory>
+    <AllowedReferenceRelatedFileExtensions>.xml</AllowedReferenceRelatedFileExtensions>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\libotp\libotp.csproj" />
   </ItemGroup>
