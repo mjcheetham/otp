@@ -3,4 +3,13 @@
     <UseArtifactsOutput>true</UseArtifactsOutput>
     <ArtifactsPath>$(MSBuildThisFileDirectory)out</ArtifactsPath>
   </PropertyGroup>
+
+  <!-- Shared NuGet package metadata for every packable project. -->
+  <PropertyGroup>
+    <Authors>Matthew John Cheetham</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/mjcheetham/otp</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/mjcheetham/otp</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
 </Project>

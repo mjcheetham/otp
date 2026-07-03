@@ -5,7 +5,20 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Mjcheetham.Otp</RootNamespace>
+    <AssemblyName>Mjcheetham.Otp</AssemblyName>
     <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
+
+  <!--
+    Published as a NuGet library so the OTP domain model and code generation
+    can be consumed independently of the command-line tool (which ships
+    separately as Mjcheetham.Otp.Tool). Shared metadata comes from
+    Directory.Build.props.
+  -->
+  <PropertyGroup>
+    <PackageId>Mjcheetham.Otp</PackageId>
+    <Description>A .NET library to create and manage one-time passwords (TOTP and HOTP).</Description>
+    <PackageTags>otp;totp;hotp;2fa;mfa;authenticator</PackageTags>
   </PropertyGroup>
 
 </Project>

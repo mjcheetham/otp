@@ -25,13 +25,8 @@
   <PropertyGroup>
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>otp</ToolCommandName>
-    <PackageId>Mjcheetham.Otp</PackageId>
-    <Authors>Matthew John Cheetham</Authors>
+    <PackageId>Mjcheetham.Otp.Tool</PackageId>
     <Description>A command-line tool to create and manage one-time passwords (TOTP and HOTP).</Description>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/mjcheetham/otp</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/mjcheetham/otp</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
     <PackageTags>otp;totp;hotp;2fa;mfa;authenticator;cli;dotnet-tool</PackageTags>
   </PropertyGroup>
 
