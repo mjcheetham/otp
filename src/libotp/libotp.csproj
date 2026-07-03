@@ -19,6 +19,8 @@
     <PackageId>Mjcheetham.Otp</PackageId>
     <Description>A .NET library to create and manage one-time passwords (TOTP and HOTP).</Description>
     <PackageTags>otp;totp;hotp;2fa;mfa;authenticator</PackageTags>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
 </Project>
