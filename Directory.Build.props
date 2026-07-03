@@ -4,6 +4,19 @@
     <ArtifactsPath>$(MSBuildThisFileDirectory)out</ArtifactsPath>
   </PropertyGroup>
 
+  <!-- Version. The root VERSION file is the single source of truth for the
+       major.minor.patch number. Local and CI builds default to a 'dev'
+       pre-release suffix (0.1.0-dev) so they can never be mistaken for a
+       release; the .NET SDK stamps the commit onto the informational version
+       as +<sha> build metadata on its own. A release overrides the suffix on
+       the command line: -p:VersionSuffix= for a tagged release (yielding a
+       clean 0.1.0) or -p:VersionSuffix=untagged for a workflow_dispatch dry
+       run. The release workflow validates the pushed tag against VERSION. -->
+  <PropertyGroup>
+    <VersionPrefix>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)VERSION').Trim())</VersionPrefix>
+    <VersionSuffix Condition="'$(VersionSuffix)' == ''">dev</VersionSuffix>
+  </PropertyGroup>
+
   <!-- Shared NuGet package metadata for every packable project. -->
   <PropertyGroup>
     <Authors>Matthew John Cheetham</Authors>
