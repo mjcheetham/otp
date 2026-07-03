@@ -113,8 +113,29 @@ jobs:
           path: ${{ env.STEM }}*
           if-no-files-found: error
 
+  pack:
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Pack .NET tool
+        run: dotnet pack src/otp -c Release -p:Version=${{ needs.prepare.outputs.version }}
+
+      # Named release-* so the release job's download picks it up alongside the
+      # per-RID archives and attaches it to the release.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-nupkg
+          path: out/package/release/*.nupkg
+          if-no-files-found: error
+
   release:
-    needs: [prepare, build]
+    needs: [prepare, build, pack]
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
