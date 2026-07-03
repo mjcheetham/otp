@@ -1,6 +1,7 @@
 using System.CommandLine;
 using System.Globalization;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 
 namespace Mjcheetham.Otp;
@@ -60,6 +61,16 @@ internal static class OtpFormat
     public static string IsoUtc(DateTimeOffset time) =>
         time.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ss'Z'", CultureInfo.InvariantCulture);
 
+    // Relax the default (HTML-safe) escaping so URL-reserved characters such as
+    // '&', '+', '<' and '>' -- common in otpauth:// URIs -- are written
+    // literally rather than as \uXXXX escapes. This output is consumed as JSON
+    // (piped, parsed, written to files), never embedded directly into HTML, so
+    // the relaxed encoder is appropriate; '"' and '\\' are still escaped.
+    private static readonly JsonWriterOptions WriterOptions = new()
+    {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+    };
+
     /// <summary>
     /// Builds a compact JSON string with <see cref="Utf8JsonWriter"/>, which is
     /// reflection-free and therefore safe under trimming and native AOT.
@@ -67,7 +78,7 @@ internal static class OtpFormat
     public static string Json(Action<Utf8JsonWriter> write)
     {
         using var buffer = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(buffer))
+        using (var writer = new Utf8JsonWriter(buffer, WriterOptions))
         {
             write(writer);
         }
