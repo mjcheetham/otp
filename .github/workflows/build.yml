@@ -26,9 +26,9 @@ jobs:
           - { rid: win-x64,     os: windows-latest }
           - { rid: win-arm64,   os: windows-11-arm }
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v5
         with:
           global-json-file: global.json
 
@@ -45,7 +45,7 @@ jobs:
       - name: Publish
         run: dotnet publish src/otp -c Release -r ${{ matrix.rid }}
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.rid }}
           path: out/publish/otp/release_${{ matrix.rid }}/**/*
@@ -55,9 +55,9 @@ jobs:
     name: packages
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v5
         with:
           global-json-file: global.json
 
@@ -66,7 +66,7 @@ jobs:
           dotnet pack src/libotp -c Release
           dotnet pack src/otp -c Release
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: packages
           path: |

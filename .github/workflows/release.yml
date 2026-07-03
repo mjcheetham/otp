@@ -16,7 +16,7 @@ jobs:
       version: ${{ steps.vars.outputs.version }}
       version_suffix: ${{ steps.vars.outputs.version_suffix }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - id: vars
         env:
@@ -76,9 +76,9 @@ jobs:
       SYMDIR: out/publish/otp/release_${{ matrix.rid }}-symbols
       STEM: otp-${{ matrix.rid }}-${{ needs.prepare.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v5
         with:
           global-json-file: global.json
 
@@ -130,7 +130,7 @@ jobs:
           Compress-Archive -Path "$env:PUBDIR/*" -DestinationPath "$env:STEM.zip" -Force
           Compress-Archive -Path "$env:SYMDIR/*" -DestinationPath "$env:STEM-symbols.zip" -Force
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: release-${{ matrix.rid }}
           path: ${{ env.STEM }}*
@@ -140,9 +140,9 @@ jobs:
     needs: prepare
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v5
         with:
           global-json-file: global.json
 
@@ -153,7 +153,7 @@ jobs:
 
       # Named release-* so the release job's download picks it up alongside the
       # per-RID archives and attaches it to the release.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: release-nupkg
           path: |
@@ -171,7 +171,7 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: dist
           pattern: release-*
