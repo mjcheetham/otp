@@ -3,8 +3,8 @@ using System.Globalization;
 namespace Mjcheetham.Otp;
 
 /// <summary>
-/// Parses otpauth:// "Key URI" values (as produced by authenticator apps and
-/// QR codes) into <see cref="IOneTimePassword"/> instances.
+/// Converts between otpauth:// "Key URI" values (as produced by authenticator
+/// apps and QR codes) and <see cref="IOneTimePassword"/> instances.
 /// </summary>
 public static class OtpAuthUri
 {
@@ -87,6 +87,59 @@ public static class OtpAuthUri
         }
 
         return new TimeBasedOtp(name, secret, period, digits, algorithm, issuer);
+    }
+
+    /// <summary>
+    /// Formats a one-time password as an otpauth:// "Key URI", the inverse of
+    /// <see cref="Parse"/>. The shared secret is embedded in the result, so the
+    /// returned string must be treated as sensitive.
+    /// </summary>
+    public static string Format(IOneTimePassword otp)
+    {
+        ArgumentNullException.ThrowIfNull(otp);
+
+        string type = otp.Kind == OtpKind.Hmac ? "hotp" : "totp";
+
+        // Label is "[issuer:]account"; escape each component separately so the
+        // separating colon is the only literal colon in the label.
+        string account = Uri.EscapeDataString(otp.Name);
+        string label = string.IsNullOrEmpty(otp.Issuer)
+            ? account
+            : Uri.EscapeDataString(otp.Issuer) + ":" + account;
+
+        string algorithm = otp.Algorithm switch
+        {
+            OtpAlgorithm.Sha256 => "SHA256",
+            OtpAlgorithm.Sha512 => "SHA512",
+            _ => "SHA1"
+        };
+
+        // Base32 padding is stripped: it is redundant and '=' is a query
+        // delimiter. Parse ignores padding, so this round-trips cleanly.
+        var parameters = new List<string>
+        {
+            "secret=" + otp.GetSecret().TrimEnd('=')
+        };
+
+        if (!string.IsNullOrEmpty(otp.Issuer))
+        {
+            parameters.Add("issuer=" + Uri.EscapeDataString(otp.Issuer));
+        }
+
+        parameters.Add("algorithm=" + algorithm);
+        parameters.Add("digits=" + otp.Digits.ToString(CultureInfo.InvariantCulture));
+
+        switch (otp)
+        {
+            case HmacOtp hotp:
+                parameters.Add("counter=" + hotp.Counter.ToString(CultureInfo.InvariantCulture));
+                break;
+            case TimeBasedOtp totp:
+                parameters.Add("period=" + totp.Period.ToString(CultureInfo.InvariantCulture));
+                break;
+        }
+
+        return $"otpauth://{type}/{label}?{string.Join("&", parameters)}";
     }
 
     private static Dictionary<string, string> ParseQuery(string query)
