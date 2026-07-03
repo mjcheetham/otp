@@ -6,7 +6,33 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Mjcheetham.Otp</RootNamespace>
-    <PublishAot>true</PublishAot>
+    <!--
+      AOT applies only when publishing for a specific runtime (the native
+      release binaries). Without a RID - `dotnet build`, `run`, and the
+      `dotnet pack` that builds the tool - stay framework-dependent, while
+      IsAotCompatible keeps the trim/AOT analyzers on so issues still surface.
+    -->
+    <PublishAot Condition="'$(RuntimeIdentifier)' != ''">true</PublishAot>
+    <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
+
+  <!--
+    Packaging as a .NET global/local tool. The tool is framework-dependent and
+    run through the dotnet host (`dotnet tool install`), which is a separate
+    distribution channel from the AOT-published native binaries produced by
+    `dotnet publish -r <rid>`.
+  -->
+  <PropertyGroup>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>otp</ToolCommandName>
+    <PackageId>Mjcheetham.Otp</PackageId>
+    <Authors>Matthew John Cheetham</Authors>
+    <Description>A command-line tool to create and manage one-time passwords (TOTP and HOTP).</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/mjcheetham/otp</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/mjcheetham/otp</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>otp;totp;hotp;2fa;mfa;authenticator;cli;dotnet-tool</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
