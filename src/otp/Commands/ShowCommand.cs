@@ -162,7 +162,8 @@ public class ShowCommand : Command
 
                     if (uri is not null)
                     {
-                        writer.WriteString("uri", uri);
+                        // Escape the URI in JSON output
+                        writer.WriteStringEscaped("uri", uri);
                     }
                     else
                     {
