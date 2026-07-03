@@ -21,8 +21,14 @@
   <PropertyGroup>
     <Authors>Matthew John Cheetham</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageProjectUrl>https://github.com/mjcheetham/otp</PackageProjectUrl>
     <RepositoryUrl>https://github.com/mjcheetham/otp</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
+
+  <!-- Pack the root README so it renders on the nuget.org package page. -->
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" Visible="false" />
+  </ItemGroup>
 </Project>
