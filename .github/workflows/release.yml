@@ -123,8 +123,10 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Pack .NET tool
-        run: dotnet pack src/otp -c Release -p:Version=${{ needs.prepare.outputs.version }}
+      - name: Pack library and tool
+        run: |
+          dotnet pack src/libotp -c Release -p:Version=${{ needs.prepare.outputs.version }}
+          dotnet pack src/otp -c Release -p:Version=${{ needs.prepare.outputs.version }}
 
       # Named release-* so the release job's download picks it up alongside the
       # per-RID archives and attaches it to the release.

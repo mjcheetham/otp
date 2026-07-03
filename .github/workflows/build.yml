@@ -52,7 +52,7 @@ jobs:
           if-no-files-found: error
 
   pack:
-    name: tool package
+    name: packages
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -61,11 +61,13 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Pack .NET tool
-        run: dotnet pack src/otp -c Release
+      - name: Pack library and tool
+        run: |
+          dotnet pack src/libotp -c Release
+          dotnet pack src/otp -c Release
 
       - uses: actions/upload-artifact@v4
         with:
-          name: tool-package
+          name: packages
           path: out/package/release/*.nupkg
           if-no-files-found: error
