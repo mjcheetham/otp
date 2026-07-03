@@ -15,7 +15,7 @@ public class AddCommand : Command
         Arity = ArgumentArity.ZeroOrOne
     };
 
-    private readonly Option<string> _uriOpt = new("--uri", "-u")
+    private readonly Option<string> _uriOpt = new("--uri")
     {
         Description = "Import from an otpauth:// URI. Cannot be combined with a " +
                       "name argument or the individual value options below."

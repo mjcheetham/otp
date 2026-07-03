@@ -25,7 +25,7 @@ public class ShowCommand : Command
         Description = "Reveal the shared secret, including within the URI, instead of masking it."
     };
 
-    private readonly Option<bool> _uriOpt = new("--uri", "-u")
+    private readonly Option<bool> _uriOpt = new("--uri")
     {
         Description = "Print only the otpauth:// URI to standard output."
     };
