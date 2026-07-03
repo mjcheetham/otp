@@ -17,6 +17,18 @@ internal static class Ui
         Out = new AnsiConsoleOutput(Console.Error)
     });
 
+    public static void DisableColor()
+    {
+        Out.Profile.Capabilities.ColorSystem = ColorSystem.NoColors;
+        Error.Profile.Capabilities.ColorSystem = ColorSystem.NoColors;
+    }
+
+    public static void DisableAnsi()
+    {
+        Out.Profile.Capabilities.Ansi = false;
+        Error.Profile.Capabilities.Ansi = false;
+    }
+
     public static void ReportError(string message) =>
         Error.MarkupLine($"[red]error:[/] {Markup.Escape(message)}");
 }
