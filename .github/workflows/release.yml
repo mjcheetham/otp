@@ -4,11 +4,6 @@ on:
   push:
     tags: ['*']
   workflow_dispatch:
-    inputs:
-      tag:
-        description: Tag to release against (e.g. v1.2.3). A draft release is created for it.
-        required: true
-        type: string
 
 permissions:
   contents: write
@@ -19,21 +14,47 @@ jobs:
     outputs:
       tag: ${{ steps.vars.outputs.tag }}
       version: ${{ steps.vars.outputs.version }}
+      version_suffix: ${{ steps.vars.outputs.version_suffix }}
     steps:
+      - uses: actions/checkout@v4
+
       - id: vars
         env:
           EVENT_NAME: ${{ github.event_name }}
-          INPUT_TAG: ${{ inputs.tag }}
           REF_NAME: ${{ github.ref_name }}
         run: |
-          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
-            tag="$INPUT_TAG"
-          else
-            tag="$REF_NAME"
+          set -euo pipefail
+          # The root VERSION file is the single source of truth for the
+          # major.minor.patch number.
+          base="$(tr -d '[:space:]' < VERSION)"
+          if [ -z "$base" ]; then
+            echo "::error::VERSION file is empty or missing." >&2
+            exit 1
           fi
-          echo "tag=$tag" >> "$GITHUB_OUTPUT"
-          # Drop a leading "v" so v1.2.3 -> 1.2.3 in artifact names.
-          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            # Dry run: build and upload workflow artifacts under an -untagged
+            # version. No tag is created (the release job skips dispatch).
+            tag=""
+            version="$base-untagged"
+            suffix="untagged"
+          else
+            # Tagged release: the pushed tag must match VERSION exactly. A
+            # leading "v" is allowed (v0.1.0 satisfies VERSION 0.1.0).
+            tag="$REF_NAME"
+            if [ "${tag#v}" != "$base" ]; then
+              echo "::error::Pushed tag '$tag' does not match VERSION '$base'. Bump VERSION or retag." >&2
+              exit 1
+            fi
+            version="$base"
+            suffix=""
+          fi
+
+          {
+            echo "tag=$tag"
+            echo "version=$version"
+            echo "version_suffix=$suffix"
+          } >> "$GITHUB_OUTPUT"
 
   build:
     needs: prepare
@@ -72,7 +93,9 @@ jobs:
           sudo apt-get install -y gcc-arm-linux-gnueabihf
 
       - name: Publish
-        run: dotnet publish src/otp -c Release -r ${{ matrix.rid }}
+        run: >
+          dotnet publish src/otp -c Release -r ${{ matrix.rid }}
+          -p:VersionSuffix=${{ needs.prepare.outputs.version_suffix }}
 
       # Separate the debug symbols from the product so each ships in its own
       # archive. Only known symbol files are moved out; everything else the
@@ -125,8 +148,8 @@ jobs:
 
       - name: Pack library and tool
         run: |
-          dotnet pack src/libotp -c Release -p:Version=${{ needs.prepare.outputs.version }}
-          dotnet pack src/otp -c Release -p:Version=${{ needs.prepare.outputs.version }}
+          dotnet pack src/libotp -c Release -p:VersionSuffix=${{ needs.prepare.outputs.version_suffix }}
+          dotnet pack src/otp -c Release -p:VersionSuffix=${{ needs.prepare.outputs.version_suffix }}
 
       # Named release-* so the release job's download picks it up alongside the
       # per-RID archives and attaches it to the release.
@@ -138,6 +161,9 @@ jobs:
 
   release:
     needs: [prepare, build, pack]
+    # Dispatch runs are dry runs: they build and upload workflow artifacts but
+    # never create a GitHub release.
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
