@@ -25,4 +25,19 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
+  <!--
+    CsWin32 generates the Windows Credential Manager P/Invokes (CredWrite/Read/
+    Enumerate/Delete/Free) used by WindowsCredentialOtpStore. It is a build-time
+    source generator only (PrivateAssets="all"), so it adds no runtime
+    dependency. NativeMethods.json sets allowMarshaling=false, which emits
+    blittable, non-runtime-marshaller signatures that are NativeAOT-safe.
+  -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Windows.CsWin32" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
+    <AdditionalFiles Include="Interop\Windows\NativeMethods.json" />
+    <AdditionalFiles Include="Interop\Windows\NativeMethods.txt" />
+  </ItemGroup>
+
 </Project>

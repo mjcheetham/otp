@@ -1,0 +1,8 @@
+CredWriteW
+CredReadW
+CredEnumerateW
+CredDeleteW
+CredFree
+CREDENTIALW
+CRED_TYPE
+CRED_PERSIST
