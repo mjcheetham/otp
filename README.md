@@ -21,8 +21,9 @@ scannable QR codes.
 - **Import & export** — read and write `otpauth://` URIs and render QR codes.
 - **Interactive or scriptable** — guided prompts on a terminal; `--format json`
   or `-z` (NUL-delimited) for scripts.
-- **Local storage** — accounts kept in `~/.otp/store.json`, restricted to your
-  user.
+- **Secure storage** — accounts kept in your OS keychain by default (macOS
+  Keychain, Windows Credential Manager, or Linux Secret Service), or a plaintext
+  file; selectable with `otp config`.
 - **Two distribution channels** — a cross-platform `dotnet tool` and
   self-contained native binaries.
 - **Reusable library** — the `Mjcheetham.Otp` package exposes the same engine.
@@ -86,6 +87,7 @@ prints the version.
 | `list`   | `ls`    | List stored accounts.                                               |
 | `show`   |         | Show an account's details, `otpauth://` URI, or QR code.            |
 | `remove` | `rm`    | Remove a stored account.                                            |
+| `config` |         | View and edit configuration (e.g. the storage backend).             |
 
 ### `add`
 
@@ -165,24 +167,61 @@ otp list -z | xargs -0 -n1 otp get
 
 ## Storage
 
-Accounts are kept in a single JSON file:
+`otp` keeps your accounts in one of several backends:
+
+| Backend          | Where                                                           |
+| ---------------- | --------------------------------------------------------------- |
+| `auto` (default) | The current OS's native store below, otherwise `plaintext`.     |
+| `keychain`       | macOS Keychain.                                                 |
+| `wincred`        | Windows Credential Manager.                                     |
+| `secretservice`  | Linux Secret Service (GNOME Keyring, KWallet, …) via libsecret. |
+| `plaintext`      | A single JSON file (see below).                                 |
+
+Choose one with [`otp config`](#configuration):
+
+```sh
+otp config set store.backend keychain    # auto | plaintext | keychain | wincred | secretservice
+```
+
+The `plaintext` backend keeps accounts in a single JSON file:
 
 - Default: `~/.otp/store.json` — the directory is created `0700`, the file `0600`.
 - Override the location with the `OTP_STORE` environment variable.
 
 > [!WARNING]
-> Secrets are stored **in plaintext**. Rely on filesystem permissions (as `otp`
-> does) and/or full-disk encryption to protect them. The storage backend sits
-> behind an interface and is intended to be swappable (e.g. an OS keychain) in
-> the future.
+> The `plaintext` backend stores secrets **unencrypted**. Rely on filesystem
+> permissions (as `otp` does) and/or full-disk encryption, or use one of the
+> native keychain backends.
+
+> [!NOTE]
+> Switching backends does not move existing accounts between them.
+
+## Configuration
+
+Configuration lives in `~/.otp/config.json` (override with `OTP_CONFIG`). Manage
+it with `otp config`:
+
+```sh
+otp config list                        # show configured values
+otp config get store.backend           # print a value (defaults to 'auto')
+otp config set store.backend keychain  # set a value
+otp config unset store.backend         # revert to the default
+otp config edit                        # open the file in $VISUAL / $EDITOR
+```
+
+| Key             | Values                                                      | Default |
+| --------------- | ----------------------------------------------------------- | ------- |
+| `store.backend` | `auto`, `plaintext`, `keychain`, `wincred`, `secretservice` | `auto`  |
 
 ## Environment variables
 
-| Variable    | Effect                                                    |
-| ----------- | -------------------------------------------------------- |
-| `OTP_STORE` | Path to the store file (default `~/.otp/store.json`).    |
-| `NO_COLOR`  | Disable coloured output.                                  |
-| `NO_ANSI`   | Disable ANSI escape sequences entirely.                  |
+| Variable            | Effect                                                          |
+| ------------------- | -------------------------------------------------------------- |
+| `OTP_STORE_BACKEND` | Storage backend override (takes precedence over the config).   |
+| `OTP_CONFIG`        | Path to the config file (default `~/.otp/config.json`).        |
+| `OTP_STORE`         | Path to the plaintext store file (default `~/.otp/store.json`). |
+| `NO_COLOR`          | Disable coloured output.                                        |
+| `NO_ANSI`           | Disable ANSI escape sequences entirely.                        |
 
 ## Library
 
