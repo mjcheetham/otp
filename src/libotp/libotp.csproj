@@ -7,6 +7,8 @@
     <RootNamespace>Mjcheetham.Otp</RootNamespace>
     <AssemblyName>Mjcheetham.Otp</AssemblyName>
     <IsAotCompatible>true</IsAotCompatible>
+    <!-- The macOS (CoreFoundation) and Windows (CsWin32) interop use pointers. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <!--
