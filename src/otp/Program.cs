@@ -2,6 +2,7 @@
 using System.CommandLine.Parsing;
 using Mjcheetham.Otp;
 using Mjcheetham.Otp.Commands;
+using FileOtpStore = Mjcheetham.Otp.Storage.FileOtpStore;
 
 var store = new FileOtpStore(FileOtpStore.GetDefaultPath());
 

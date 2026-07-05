@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Mjcheetham.Otp.Storage;
 using Spectre.Console;
 
 namespace Mjcheetham.Otp.Commands;

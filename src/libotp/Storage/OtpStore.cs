@@ -1,6 +1,6 @@
 using System.Collections;
 
-namespace Mjcheetham.Otp;
+namespace Mjcheetham.Otp.Storage;
 
 public interface IOtpStore
 {
@@ -13,6 +13,9 @@ public interface IOtpStore
     Task<bool> RemoveAsync(string name, CancellationToken ct = default);
 }
 
+/// <summary>
+/// A simple in-memory store for one-time passwords, backed by a simple list.
+/// </summary>
 public class InMemoryOtpStore : IOtpStore, IEnumerable<IOneTimePassword>
 {
     private readonly List<IOneTimePassword> _otps = new();

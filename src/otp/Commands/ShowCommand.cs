@@ -3,6 +3,7 @@ using System.CommandLine;
 using System.CommandLine.Parsing;
 using System.Globalization;
 using System.Text;
+using Mjcheetham.Otp.Storage;
 using QRCoder;
 using Spectre.Console;
 

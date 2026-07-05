@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Mjcheetham.Otp;
+namespace Mjcheetham.Otp.Storage;
 
 /// <summary>
 /// An <see cref="IOtpStore"/> backed by a plaintext JSON file. Secrets are
