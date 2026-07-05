@@ -13,7 +13,7 @@ public class ShowCommand : Command
 {
     private const string MaskedSecret = "••••••••";
 
-    private readonly IOtpStore _store;
+    private readonly Lazy<IOtpStore> _store;
     private readonly FormatOptions _format = new();
 
     private readonly Argument<string> _nameArg = new("name")
@@ -36,7 +36,7 @@ public class ShowCommand : Command
         Description = "Print the otpauth:// URI as a QR code to standard output."
     };
 
-    public ShowCommand(IOtpStore store) : base("show", "Show the details of a stored one-time password.")
+    public ShowCommand(Lazy<IOtpStore> store) : base("show", "Show the details of a stored one-time password.")
     {
         _store = store;
 
@@ -47,7 +47,7 @@ public class ShowCommand : Command
         _format.AddTo(this);
 
         Validators.Add(Validate);
-        SetAction(ExecuteAsync);
+        SetAction((result, cancellationToken) => StoreActions.RunAsync(() => ExecuteAsync(result, cancellationToken)));
     }
 
     private void Validate(CommandResult result)
@@ -64,7 +64,7 @@ public class ShowCommand : Command
         bool showSecret = result.GetValue(_showSecretOpt);
         OutputFormat format = _format.Resolve(result);
 
-        IOneTimePassword? otp = await _store.GetAsync(name, cancellationToken);
+        IOneTimePassword? otp = await _store.Value.GetAsync(name, cancellationToken);
         if (otp is null)
         {
             Ui.ReportError($"no one-time password named '{name}' was found.");

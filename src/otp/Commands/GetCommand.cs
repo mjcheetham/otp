@@ -7,7 +7,7 @@ namespace Mjcheetham.Otp.Commands;
 
 public class GetCommand : Command
 {
-    private readonly IOtpStore _store;
+    private readonly Lazy<IOtpStore> _store;
     private readonly FormatOptions _format = new();
 
     private readonly Argument<string> _nameArg = new("name")
@@ -20,7 +20,7 @@ public class GetCommand : Command
         Description = "Counter value to use for this code (counter-based OTPs only)."
     };
 
-    public GetCommand(IOtpStore store) : base("get", "Generate the current code for a stored one-time password.")
+    public GetCommand(Lazy<IOtpStore> store) : base("get", "Generate the current code for a stored one-time password.")
     {
         _store = store;
 
@@ -30,7 +30,7 @@ public class GetCommand : Command
         Add(_counterOpt);
         _format.AddTo(this);
 
-        SetAction(ExecuteAsync);
+        SetAction((result, cancellationToken) => StoreActions.RunAsync(() => ExecuteAsync(result, cancellationToken)));
     }
 
     private async Task<int> ExecuteAsync(ParseResult result, CancellationToken cancellationToken)
@@ -39,7 +39,7 @@ public class GetCommand : Command
         long? counter = result.GetValue(_counterOpt);
         OutputFormat format = _format.Resolve(result);
 
-        IOneTimePassword? otp = await _store.GetAsync(name, cancellationToken);
+        IOneTimePassword? otp = await _store.Value.GetAsync(name, cancellationToken);
         if (otp is null)
         {
             Ui.ReportError($"no one-time password named '{name}' was found.");

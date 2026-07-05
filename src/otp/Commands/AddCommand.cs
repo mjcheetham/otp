@@ -7,7 +7,7 @@ namespace Mjcheetham.Otp.Commands;
 
 public class AddCommand : Command
 {
-    private readonly IOtpStore _store;
+    private readonly Lazy<IOtpStore> _store;
 
     private readonly Argument<string> _nameArg = new("name")
     {
@@ -70,7 +70,7 @@ public class AddCommand : Command
         HelpName = "sha1|sha256|sha512"
     };
 
-    public AddCommand(IOtpStore store) : base("add", "Add a new one-time password.")
+    public AddCommand(Lazy<IOtpStore> store) : base("add", "Add a new one-time password.")
     {
         _store = store;
 
@@ -86,7 +86,7 @@ public class AddCommand : Command
         Add(_algorithmOpt);
 
         Validators.Add(Validate);
-        SetAction(ExecuteAsync);
+        SetAction((result, cancellationToken) => StoreActions.RunAsync(() => ExecuteAsync(result, cancellationToken)));
     }
 
     private void Validate(CommandResult result)
@@ -232,7 +232,7 @@ public class AddCommand : Command
 
         try
         {
-            await _store.AddAsync(otp, cancellationToken);
+            await _store.Value.AddAsync(otp, cancellationToken);
         }
         catch (InvalidOperationException ex)
         {
@@ -280,7 +280,7 @@ public class AddCommand : Command
         IAnsiConsole io = Ui.Error;
 
         var existingNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        await foreach (IOneTimePassword existing in _store.ListAsync(cancellationToken))
+        await foreach (IOneTimePassword existing in _store.Value.ListAsync(cancellationToken))
         {
             existingNames.Add(existing.Name);
         }

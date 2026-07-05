@@ -6,7 +6,7 @@ namespace Mjcheetham.Otp.Commands;
 
 public class ListCommand : Command
 {
-    private readonly IOtpStore _store;
+    private readonly Lazy<IOtpStore> _store;
     private readonly FormatOptions _format = new();
 
     private readonly Option<OtpKind?> _typeOpt = new("--type", "-t")
@@ -16,7 +16,7 @@ public class ListCommand : Command
         CustomParser = OtpTypeParser.ParseNullable
     };
 
-    public ListCommand(IOtpStore store) : base("list", "List stored one-time passwords.")
+    public ListCommand(Lazy<IOtpStore> store) : base("list", "List stored one-time passwords.")
     {
         _store = store;
 
@@ -24,7 +24,7 @@ public class ListCommand : Command
 
         Add(_typeOpt);
         _format.AddTo(this);
-        SetAction(ExecuteAsync);
+        SetAction((result, cancellationToken) => StoreActions.RunAsync(() => ExecuteAsync(result, cancellationToken)));
     }
 
     private async Task<int> ExecuteAsync(ParseResult result, CancellationToken cancellationToken)
@@ -33,7 +33,7 @@ public class ListCommand : Command
         OutputFormat format = _format.Resolve(result);
 
         var names = new List<string>();
-        await foreach (var otp in _store.ListAsync(cancellationToken))
+        await foreach (var otp in _store.Value.ListAsync(cancellationToken))
         {
             if (type is not null && otp.Kind != type)
             {

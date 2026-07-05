@@ -6,7 +6,7 @@ namespace Mjcheetham.Otp.Commands;
 
 public class RemoveCommand : Command
 {
-    private readonly IOtpStore _store;
+    private readonly Lazy<IOtpStore> _store;
 
     private readonly Argument<string> _nameArg = new("name")
     {
@@ -18,7 +18,7 @@ public class RemoveCommand : Command
         Description = "Remove without prompting for confirmation."
     };
 
-    public RemoveCommand(IOtpStore store) : base("remove", "Remove a stored one-time password.")
+    public RemoveCommand(Lazy<IOtpStore> store) : base("remove", "Remove a stored one-time password.")
     {
         _store = store;
 
@@ -27,7 +27,7 @@ public class RemoveCommand : Command
         Add(_nameArg);
         Add(_yesOpt);
 
-        SetAction(ExecuteAsync);
+        SetAction((result, cancellationToken) => StoreActions.RunAsync(() => ExecuteAsync(result, cancellationToken)));
     }
 
     private async Task<int> ExecuteAsync(ParseResult result, CancellationToken cancellationToken)
@@ -35,7 +35,7 @@ public class RemoveCommand : Command
         string name = result.GetValue(_nameArg)!;
         bool skipConfirmation = result.GetValue(_yesOpt);
 
-        IOneTimePassword? otp = await _store.GetAsync(name, cancellationToken);
+        IOneTimePassword? otp = await _store.Value.GetAsync(name, cancellationToken);
         if (otp is null)
         {
             Ui.ReportError($"no one-time password named '{name}' was found.");
@@ -56,7 +56,7 @@ public class RemoveCommand : Command
             }
         }
 
-        if (!await _store.RemoveAsync(otp.Name, cancellationToken))
+        if (!await _store.Value.RemoveAsync(otp.Name, cancellationToken))
         {
             Ui.ReportError($"no one-time password named '{name}' was found.");
             return 1;
